@@ -8,6 +8,11 @@ from rest_framework import status
 
 CREATE_USER_URL = reverse('user:create')
 TOKEN_USER_URL = reverse('user:token')
+ME_URL = reverse('user:me')
+
+SAFE_EMAIL = 'bill@bailey.com'
+SAFE_PASSWORD = 'mysecretpassword'
+SAFE_NAME = 'Bill Bailey'
 
 
 def create_user(**params):
@@ -15,9 +20,9 @@ def create_user(**params):
 
 
 def create_payload(
-        email='email@email.com',
-        password='mysecretpassword',
-        name='Bill Bailey'
+        email=SAFE_EMAIL,
+        password=SAFE_PASSWORD,
+        name=SAFE_NAME
         ):
     return {
         'email': email,
@@ -26,7 +31,7 @@ def create_payload(
     }
 
 
-class PublicUserApiTests(TestCase):
+class PublicUserAPITests(TestCase):
     def setUp(self):
         self.client = APIClient()
 
@@ -91,3 +96,49 @@ class PublicUserApiTests(TestCase):
             )
         self.assertNotIn('token', res.data)
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_retrieve_user_unauthenticated(self):
+        """Test authentication is required for users"""
+        res = self.client.get(ME_URL)
+
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class PrivateUserAPITests(TestCase):
+    """Test API requests for the authenticated user"""
+
+    def setUp(self):
+        payload = create_payload()
+        self.user = create_user(**payload)
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user)
+
+    def test_retrieve_user_profile(self):
+        res = self.client.get(ME_URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data, {
+            'name': SAFE_NAME,
+            'email': SAFE_EMAIL
+        })
+
+    def test_post_me_not_allowed(self):
+        """Test that user/me POST requests are not allowed"""
+        res = self.client.post(ME_URL, {})
+        self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_update_user_name(self):
+        payload = create_payload(name='Bob Barker')
+        res = self.client.patch(ME_URL, payload)
+
+        self.user.refresh_from_db()
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data['name'], payload['name'])
+        self.assertEqual(self.user.name, payload['name'])
+
+    def test_update_user_password(self):
+        payload = create_payload(password='ultimatepassword')
+        res = self.client.patch(ME_URL, payload)
+
+        self.user.refresh_from_db()
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertTrue(self.user.check_password(payload['password']))
