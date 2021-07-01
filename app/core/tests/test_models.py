@@ -6,6 +6,8 @@ from core import models
 
 SAFE_EMAIL = 'test@email.com'
 SAFE_PASSWORD = 'test123'
+SAFE_TAG = 'vegan'
+SAFE_INGREDIENT = 'Cucumber'
 
 
 def create_sample_user(email=SAFE_EMAIL, password=SAFE_PASSWORD):
@@ -47,7 +49,15 @@ class ModelTests(TestCase):
         """Test the tag string representation"""
         tag = models.Tag.objects.create(
             user=create_sample_user(),
-            name='vegan'
+            name=SAFE_TAG
             )
 
-        self.assertEqual(str(tag), tag.name)
+        self.assertEqual(str(tag), SAFE_TAG)
+
+    def test_ingredient_str(self):
+        ingredient = models.Ingredient.objects.create(
+            user=create_sample_user(),
+            name=SAFE_INGREDIENT
+        )
+
+        self.assertEqual(str(ingredient), SAFE_INGREDIENT)
