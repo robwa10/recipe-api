@@ -6,8 +6,11 @@ from core import models
 
 SAFE_EMAIL = 'test@email.com'
 SAFE_PASSWORD = 'test123'
-SAFE_TAG = 'vegan'
 SAFE_INGREDIENT = 'Cucumber'
+SAFE_RECIPE_TITLE = 'Vegan Pancakes'
+SAFE_RECIPE_COOK_TIME = 5
+SAFE_RECIPE_PRICE = 5.00
+SAFE_TAG = 'vegan'
 
 
 def create_sample_user(email=SAFE_EMAIL, password=SAFE_PASSWORD):
@@ -61,3 +64,13 @@ class ModelTests(TestCase):
         )
 
         self.assertEqual(str(ingredient), SAFE_INGREDIENT)
+
+    def test_recipe_str(self):
+        """Test the recipe string representation"""
+        recipe = models.Recipe.objects.create(
+            user=create_sample_user(),
+            title=SAFE_RECIPE_TITLE,
+            time_minutes=SAFE_RECIPE_COOK_TIME,
+            price=SAFE_RECIPE_PRICE
+        )
+        self.assertEqual(str(recipe), recipe.title)
