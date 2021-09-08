@@ -187,6 +187,50 @@ class PrivateRecipeApiTests(TestCase):
         self.assertEqual(recipe.time_minutes, payload['time_minutes'])
         self.assertEqual(recipe.price, payload['price'])
 
+    def test_filter_recipes_by_tags(self):
+        recipe1 = create_sample_recipe(user=self.user)
+        recipe2 = create_sample_recipe(user=self.user, title='Curry')
+        recipe3 = create_sample_recipe(user=self.user, title='Fish and Chips')
+        tag1 = create_sample_tag(user=self.user)
+        tag2 = create_sample_tag(user=self.user, name='Vegetarian')
+        recipe1.tags.add(tag1)
+        recipe2.tags.add(tag2)
+
+        res = self.client.get(
+            RECIPES_URL,
+            {'tags': f'{tag1.id},{tag2.id}'}
+        )
+
+        serializer1 = RecipeSerializer(recipe1)
+        serializer2 = RecipeSerializer(recipe2)
+        serializer3 = RecipeSerializer(recipe3)
+
+        self.assertIn(serializer1.data, res.data)
+        self.assertIn(serializer2.data, res.data)
+        self.assertNotIn(serializer3.data, res.data)
+
+    def test_filter_recipes_by_ingredients(self):
+        recipe1 = create_sample_recipe(user=self.user)
+        recipe2 = create_sample_recipe(user=self.user, title='Curry')
+        recipe3 = create_sample_recipe(user=self.user, title='Fish and Chips')
+        ingredient1 = create_sample_ingredient(user=self.user, name='Chicken')
+        ingredient2 = create_sample_ingredient(user=self.user, name='Fish')
+        recipe2.ingredients.add(ingredient1)
+        recipe3.ingredients.add(ingredient2)
+
+        res = self.client.get(
+            RECIPES_URL,
+            {'ingredients': f'{ingredient1.id},{ingredient2.id}'}
+        )
+
+        serializer1 = RecipeSerializer(recipe1)
+        serializer2 = RecipeSerializer(recipe2)
+        serializer3 = RecipeSerializer(recipe3)
+
+        self.assertIn(serializer2.data, res.data)
+        self.assertIn(serializer3.data, res.data)
+        self.assertNotIn(serializer1.data, res.data)
+
 
 class RecipeImageUploadTests(TestCase):
     def setUp(self):
